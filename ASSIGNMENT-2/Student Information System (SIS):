@@ -1,0 +1,124 @@
+CREATE DATABASE KrishSchool;
+USE KrishSchool;
+
+CREATE TABLE Students (
+    student_id INT PRIMARY KEY AUTO_INCREMENT,
+    first_name VARCHAR(50) NOT NULL,
+    last_name VARCHAR(50) NOT NULL,
+    date_of_birth DATE NOT NULL,
+    email VARCHAR(100) UNIQUE NOT NULL,
+    phone_number VARCHAR(15) UNIQUE NOT NULL
+);
+
+CREATE TABLE Teachers (
+    teacher_id INT PRIMARY KEY AUTO_INCREMENT,
+    first_name VARCHAR(50) NOT NULL,
+    last_name VARCHAR(50) NOT NULL,
+    email VARCHAR(100) UNIQUE NOT NULL
+);
+
+CREATE TABLE Courses (
+    course_id INT PRIMARY KEY AUTO_INCREMENT,
+    course_name VARCHAR(100) NOT NULL,
+    credits INT NOT NULL,
+    teacher_id INT,
+    FOREIGN KEY (teacher_id) REFERENCES Teachers(teacher_id) ON DELETE SET NULL
+);
+
+CREATE TABLE Enrollments (
+    enrollment_id INT PRIMARY KEY AUTO_INCREMENT,
+    student_id INT,
+    course_id INT,
+    enrollment_date DATE NOT NULL,
+    FOREIGN KEY (student_id) REFERENCES Students(student_id) ON DELETE CASCADE,
+    FOREIGN KEY (course_id) REFERENCES Courses(course_id) ON DELETE CASCADE
+);
+
+CREATE TABLE Payments (
+    payment_id INT PRIMARY KEY AUTO_INCREMENT,
+    student_id INT,
+    amount DECIMAL(8,2) NOT NULL,
+    payment_date DATE NOT NULL,
+    FOREIGN KEY (student_id) REFERENCES Students(student_id) ON DELETE CASCADE
+);
+
+INSERT INTO Students (first_name, last_name, date_of_birth, email, phone_number) VALUES
+('Karthik', 'Raja', '2000-05-15', 'karthik.raja@example.com', '9012345678'),
+('Harini', 'Suresh', '2001-08-22', 'harini.suresh@example.com', '9023456789'),
+('Harshini', 'Venkat', '1999-07-10', 'harshini.venkat@example.com', '9034567890'),
+('Gayathri', 'Mohan', '2002-11-30', 'gayathri.mohan@example.com', '9045678901'),
+('Malli', 'Natarajan', '2003-02-18', 'malli.natarajan@example.com', '9056789012');
+
+INSERT INTO Teachers (first_name, last_name, email) VALUES
+('Ravi', 'Sharma', 'ravi.sharma@example.com'),
+('Anitha', 'Devi', 'anitha.devi@example.com'),
+('Mohan', 'Krishnan', 'mohan.krishnan@example.com');
+
+INSERT INTO Courses (course_name, credits, teacher_id) VALUES
+('Mathematics', 3, 1),
+('Physics', 4, 2),
+('Chemistry', 3, 3),
+('Computer Science', 5, 1),
+('English Literature', 2, 2);
+
+INSERT INTO Enrollments (student_id, course_id, enrollment_date) VALUES
+(1, 1, '2025-01-10'),
+(2, 2, '2025-02-15'),
+(3, 3, '2025-03-20'),
+(4, 4, '2025-04-25'),
+(5, 5, '2025-05-30');
+
+INSERT INTO Payments (student_id, amount, payment_date) VALUES
+(1, 5000.00, '2025-01-15'),
+(2, 4500.00, '2025-02-20'),
+(3, 6000.00, '2025-03-25'),
+(4, 5500.00, '2025-04-30'),
+(5, 4000.00, '2025-05-05');
+
+SELECT * FROM Students;
+SELECT * FROM Enrollments WHERE student_id = 1;
+SELECT * FROM Courses;
+SELECT * FROM Enrollments WHERE course_id = 2;
+SELECT * FROM Enrollments WHERE student_id = 3;
+SELECT * FROM Enrollments WHERE enrollment_date = CURDATE();
+SELECT * FROM Enrollments WHERE enrollment_date BETWEEN '2025-02-01' AND '2025-04-01';
+SELECT * FROM Courses WHERE course_name LIKE '%Math%';
+SELECT * FROM Payments WHERE amount BETWEEN 4000 AND 6000;
+SELECT * FROM Students WHERE phone_number LIKE '%6789';
+
+SELECT student_id, SUM(amount) AS total_payment FROM Payments GROUP BY student_id;
+
+SELECT c.course_name, COUNT(e.student_id) AS total_students FROM Courses c LEFT JOIN Enrollments e ON c.course_id = e.course_id GROUP BY c.course_name;
+
+SELECT s.first_name, s.last_name FROM Students s LEFT JOIN Enrollments e ON s.student_id = e.student_id WHERE e.student_id IS NULL;
+
+SELECT s.first_name, s.last_name, c.course_name FROM Students s JOIN Enrollments e ON s.student_id = e.student_id JOIN Courses c ON e.course_id = c.course_id;
+
+SELECT t.first_name, t.last_name, c.course_name FROM Teachers t JOIN Courses c ON t.teacher_id = c.teacher_id;
+
+SELECT s.first_name, s.last_name, e.enrollment_date FROM Students s JOIN Enrollments e ON s.student_id = e.student_id JOIN Courses c ON e.course_id = c.course_id WHERE c.course_id = 1;
+SELECT s.first_name, s.last_name FROM Students s LEFT JOIN Payments p ON s.student_id = p.student_id WHERE p.student_id IS NULL;
+
+SELECT course_name FROM Courses WHERE course_id = (SELECT course_id FROM Enrollments GROUP BY course_id ORDER BY COUNT(student_id) DESC LIMIT 1);
+
+SELECT first_name, last_name FROM Students WHERE student_id = (SELECT student_id FROM Payments ORDER BY amount DESC LIMIT 1);
+
+SELECT course_name FROM Courses WHERE course_id IN (SELECT course_id FROM Enrollments GROUP BY course_id HAVING COUNT(student_id) = (SELECT MAX(count) FROM (SELECT COUNT(student_id) AS count FROM Enrollments GROUP BY course_id) AS subquery));
+
+SELECT teacher_id, SUM(amount) FROM Payments JOIN Enrollments ON Payments.student_id = Enrollments.student_id JOIN Courses ON Enrollments.course_id = Courses.course_id GROUP BY teacher_id;
+SELECT student_id FROM Students WHERE (SELECT COUNT(course_id) FROM Enrollments WHERE Enrollments.student_id = Students.student_id) = (SELECT COUNT(*) FROM Courses);
+
+SELECT first_name, last_name FROM Teachers WHERE teacher_id NOT IN (SELECT teacher_id FROM Courses);
+
+SELECT AVG(DATEDIFF(CURDATE(), date_of_birth) / 365) AS average_age FROM Students;
+
+SELECT course_name FROM Courses WHERE course_id NOT IN (SELECT DISTINCT course_id FROM Enrollments);
+
+SELECT student_id, course_id, SUM(amount) FROM Payments JOIN Enrollments ON Payments.student_id = Enrollments.student_id GROUP BY student_id, course_id;
+
+SELECT student_id FROM Payments GROUP BY student_id HAVING COUNT(payment_id) > 1;
+
+SELECT student_id, SUM(amount) FROM Payments GROUP BY student_id;
+
+SELECT course_name, COUNT(student_id) FROM Enrollments JOIN Courses ON Enrollments.course_id = Courses.course_id GROUP BY course_name;
+SELECT AVG(amount) FROM Payments;
