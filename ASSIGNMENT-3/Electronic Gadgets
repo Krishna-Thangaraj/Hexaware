@@ -1,0 +1,128 @@
+CREATE DATABASE KrishMart;
+USE KrishMart;
+
+CREATE TABLE Krish_Customers (
+    CustomerID INT PRIMARY KEY AUTO_INCREMENT,
+    FirstName VARCHAR(100) NOT NULL,
+    LastName VARCHAR(100) NOT NULL,
+    Email VARCHAR(255) UNIQUE NOT NULL,
+    Phone VARCHAR(15) NOT NULL,
+    Address TEXT NOT NULL
+);
+
+CREATE TABLE Krish_Products (
+    ProductID INT PRIMARY KEY AUTO_INCREMENT,
+    ProductName VARCHAR(255) NOT NULL,
+    Description TEXT,
+    Price DECIMAL(10,2) NOT NULL
+);
+
+CREATE TABLE Krish_Orders (
+    OrderID INT PRIMARY KEY AUTO_INCREMENT,
+    CustomerID INT NOT NULL,
+    OrderDate DATETIME DEFAULT CURRENT_TIMESTAMP,
+    TotalAmount DECIMAL(10,2) NOT NULL,
+    FOREIGN KEY (CustomerID) REFERENCES Krish_Customers(CustomerID) ON DELETE CASCADE
+);
+
+CREATE TABLE Krish_OrderDetails (
+    OrderDetailID INT PRIMARY KEY AUTO_INCREMENT,
+    OrderID INT NOT NULL,
+    ProductID INT NOT NULL,
+    Quantity INT NOT NULL,
+    FOREIGN KEY (OrderID) REFERENCES Krish_Orders(OrderID) ON DELETE CASCADE,
+    FOREIGN KEY (ProductID) REFERENCES Krish_Products(ProductID) ON DELETE CASCADE
+);
+
+CREATE TABLE Krish_Inventory (
+    InventoryID INT PRIMARY KEY AUTO_INCREMENT,
+    ProductID INT NOT NULL,
+    QuantityInStock INT NOT NULL,
+    LastStockUpdate DATETIME DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (ProductID) REFERENCES Krish_Products(ProductID) ON DELETE CASCADE
+);
+
+INSERT INTO Krish_Customers (FirstName, LastName, Email, Phone, Address) VALUES  
+('Harini', 'Suresh', 'harini.suresh@email.com', '9012345678', 'Chennai, India'),  
+('Karthik', 'Raja', 'karthik.raja@email.com', '9023456789', 'Bangalore, India'),  
+('Harshini', 'Venkat', 'harshini.venkat@email.com', '9034567890', 'Delhi, India'),  
+('Gayathri', 'Mohan', 'gayathri.mohan@email.com', '9045678901', 'Mumbai, India'),  
+('Malli', 'Natarajan', 'malli.natarajan@email.com', '9056789012', 'Hyderabad, India');
+
+SELECT * FROM Krish_Customers;
+
+INSERT INTO Krish_Products (ProductName, Description, Price) VALUES  
+('Laptop', 'Dell XPS 13', 82998.00),  
+('Smartphone', 'iPhone 14', 74999.00),  
+('Headphones', 'Sony WH-1000XM5', 22998.00),  
+('Smartwatch', 'Samsung Galaxy Watch 4', 3999.00),  
+('Tablet', 'iPad Air', 19999.00);
+
+SELECT * FROM Krish_Products;
+
+INSERT INTO Krish_Orders (CustomerID, OrderDate, TotalAmount) VALUES  
+(1, '2024-03-15 10:00:00', 82998.00),  
+(2, '2024-03-16 12:30:00', 74999.00),  
+(3, '2024-03-17 14:15:00', 22998.00),  
+(4, '2024-03-18 09:45:00', 3999.00),  
+(5, '2024-03-19 11:20:00', 19999.00);
+
+SET FOREIGN_KEY_CHECKS = 0;
+INSERT INTO Krish_OrderDetails (OrderID, ProductID, Quantity) VALUES
+(1, 1, 1),  
+(1, 3, 1),  
+(2, 2, 1),
+(3, 4, 1),   
+(3, 5, 1), 
+(4, 4, 1),   
+(5, 5, 1); 
+SET FOREIGN_KEY_CHECKS = 1;
+
+SELECT FirstName, LastName, Email FROM Krish_Customers;
+
+SELECT Krish_Orders.OrderID, Krish_Orders.OrderDate, Krish_Customers.FirstName, Krish_Customers.LastName 
+FROM Krish_Orders 
+JOIN Krish_Customers ON Krish_Orders.CustomerID = Krish_Customers.CustomerID;
+
+INSERT INTO Krish_Customers (FirstName, LastName, Email, Phone, Address) VALUES
+('Harshini', 'Mohan', 'harshini.mohan@email.com', '9123456789', 'Salem, India');
+
+UPDATE Krish_Products  
+SET Price = Price * 1.10  
+WHERE ProductID IN (1, 2, 3, 4, 5);
+
+DELETE FROM Krish_OrderDetails WHERE OrderID = 2;
+DELETE FROM Krish_Orders WHERE OrderID = 2;
+
+INSERT INTO Krish_Orders (CustomerID, OrderDate, TotalAmount) VALUES 
+(3, '2025-08-25 10:00:00', 70000);
+
+SELECT * FROM Krish_Orders;
+
+UPDATE Krish_Customers 
+SET Email='harshini.mohan1234@email.com', Address='Coimbatore, India' 
+WHERE CustomerID = 6;
+
+UPDATE Krish_Orders 
+SET TotalAmount = (
+    SELECT COALESCE(SUM(Krish_OrderDetails.Quantity * Krish_Products.Price), 0)
+    FROM Krish_OrderDetails 
+    JOIN Krish_Products ON Krish_OrderDetails.ProductID = Krish_Products.ProductID
+    WHERE Krish_OrderDetails.OrderID = Krish_Orders.OrderID
+);
+
+SET SQL_SAFE_UPDATES = 0;
+
+INSERT INTO Krish_Products (ProductName, Description, Price) VALUES 
+('POCO X5', 'Snapdragon Processor', 55000.00);
+
+ALTER TABLE Krish_Customers ADD COLUMN OrderCount INT DEFAULT 0;
+
+UPDATE Krish_Customers 
+JOIN (
+    SELECT CustomerID, COUNT(OrderID) AS TotalOrders
+    FROM Krish_Orders
+    GROUP BY CustomerID  
+) AS OrderCounts 
+ON Krish_Customers.CustomerID = OrderCounts.CustomerID
+SET Krish_Customers.OrderCount = OrderCounts.TotalOrders;
