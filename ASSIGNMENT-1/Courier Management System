@@ -1,1 +1,98 @@
+CREATE DATABASE KrishDeliverss;
+USE KrishDeliverss;
+
+CREATE TABLE Customers (
+    CustomerID INT PRIMARY KEY AUTO_INCREMENT,
+    Name VARCHAR(100) NOT NULL,
+    Phone VARCHAR(15) UNIQUE NOT NULL,
+    Email VARCHAR(100) UNIQUE,
+    Address TEXT NOT NULL
+);
+
+CREATE TABLE Couriers (
+    CourierID INT PRIMARY KEY AUTO_INCREMENT,
+    TrackingNumber VARCHAR(20) UNIQUE NOT NULL,
+    SenderID INT,
+    ReceiverID INT,
+    Weight DECIMAL(5,2),
+    Status ENUM('Pending', 'In Transit', 'Delivered', 'Cancelled') DEFAULT 'Pending',
+    DispatchDate DATE,
+    DeliveryDate DATE,
+    FOREIGN KEY (SenderID) REFERENCES Customers(CustomerID),
+    FOREIGN KEY (ReceiverID) REFERENCES Customers(CustomerID)
+);
+
+CREATE TABLE DeliveryAgents (
+    AgentID INT PRIMARY KEY AUTO_INCREMENT,
+    Name VARCHAR(100) NOT NULL,
+    Phone VARCHAR(15) UNIQUE NOT NULL,
+    Email VARCHAR(100) UNIQUE,
+    AssignedCourierID INT,
+    FOREIGN KEY (AssignedCourierID) REFERENCES Couriers(CourierID) ON DELETE SET NULL
+);
+
+CREATE TABLE Payments (
+    PaymentID INT PRIMARY KEY AUTO_INCREMENT,
+    CourierID INT,
+    Amount DECIMAL(8,2),
+    PaymentMethod ENUM('Cash', 'Card', 'Online'),
+    PaymentStatus ENUM('Pending', 'Completed', 'Failed') DEFAULT 'Pending',
+    FOREIGN KEY (CourierID) REFERENCES Couriers(CourierID)
+);
+
+SHOW Tables;
+
+INSERT INTO Customers (Name, Phone, Email, Address) 
+VALUES 
+('Karthik', '9012345678', 'karthik@example.com', '10A, MG Road, Chennai'),
+('Harini', '9023456789', 'harini@example.com', '22B, Anna Nagar, Chennai'),
+('Harshini', '9034567890', 'harshini@example.com', '35C, T Nagar, Chennai'),
+('Gayathri', '9045678901', 'gayathri@example.com', '14D, Velachery, Chennai'),
+('Malli', '9056789012', 'malli@example.com', '7E, Adyar, Chennai');
+
+INSERT INTO Couriers (TrackingNumber, SenderID, ReceiverID, Weight, Status, DispatchDate) 
+VALUES 
+('KRISH1001', 1, 2, 3.2, 'Pending', '2025-03-18'),
+('KRISH1002', 3, 4, 1.5, 'In Transit', '2025-03-17'),
+('KRISH1003', 5, 1, 2.8, 'Delivered', '2025-03-15');
+
+INSERT INTO DeliveryAgents (Name, Phone, Email) 
+VALUES 
+('David Johnson', '7654321098', 'david@example.com'),
+('Anand Kumar', '7665432109', 'anand@example.com');
+
+
+INSERT INTO Payments (CourierID, Amount, PaymentMethod, PaymentStatus) 
+VALUES 
+(1, 450.00, 'Online', 'Pending'),
+(2, 300.00, 'Cash', 'Completed'),
+(3, 150.00, 'Card', 'Completed');
+
+SELECT * FROM Couriers WHERE Status = 'In Transit';
+
+SELECT Name, Phone, Email, Address FROM Customers;
+
+____
+
+
+SELECT * FROM Customers;
+
+SELECT * FROM Couriers WHERE SenderID = (SELECT CustomerID FROM Customers WHERE Name = 'Karthik');
+
+SELECT * FROM Couriers;
+
+SELECT * FROM Couriers WHERE TrackingNumber = 'KRISH1001';
+
+SELECT * FROM Couriers WHERE Status = 'Delivered';
+
+SELECT * FROM Couriers WHERE Status != 'Delivered';
+
+SELECT * FROM Couriers WHERE DeliveryDate = CURDATE();
+
+SELECT * FROM Couriers WHERE Status = 'In Transit';
+
+SELECT AssignedCourierID, COUNT(*) AS TotalPackages FROM Couriers GROUP BY AssignedCourierID;
+
+SELECT AssignedCourierID, AVG(DATEDIFF(DeliveryDate, DispatchDate)) AS AvgDeliveryTime 
+FROM Couriers WHERE DeliveryDate IS NOT NULL GROUP BY AssignedCourierID;
 
