@@ -1,9 +1,0 @@
-entity classes (User, Client, Claim, Payment, Policy)
-
-exception with PolicyNotFoundException
-
-util for DB connection (DBConnUtil, DBPropertyUtil)
-
-dao interface PolicyService and full implementation in InsuranceService
-
-main package structure started (MainModule)
